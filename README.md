@@ -1,174 +1,266 @@
-# Webassembly Linux Interface (WALI)
+# wali-lib
 
-![WebAssembly Linux Interface](assets/main-logo.png?raw=true)
+**Native Library Support for WebAssembly via WALI**
 
-***A (Nearly-Complete) Linux API for WebAssembly!***
+A fork of [WALI (WebAssembly Linux Interface)](https://github.com/ArtlexArtem/wali) focused on providing native library bindings for WebAssembly applications.
 
-This is a result of work published at *EuroSys 2025* on [**Empowering WebAssembly with Thin Kernel Interfaces**](https://dl.acm.org/doi/abs/10.1145/3689031.3717470) (arxiv version available [here](https://arxiv.org/abs/2312.03858))
+## What is wali-lib?
 
-This repo contains all the compiler and engine prototypes for an implementation of the *WebAssembly Linux Interface*. A list of supported syscalls can be found [here](docs/support.md)
+wali-lib extends WALI to support native libraries (starting with zlib) in WebAssembly applications. It provides:
 
-## Initial Setup
+1. **Shim Headers** - Drop-in replacement headers that declare functions as WASM imports
+2. **Native Wrappers** - WAMR host functions that call the actual native libraries
+3. **Handle Tables** - Bridge between WASM's 32-bit pointers and native 64-bit pointers
 
-Setup toolchain configs: `python3 toolchains/gen_toolchains.py`
+## Currently Supported Libraries
 
-## Component Setup
+| Library | Functions | Status |
+|---------|-----------|--------|
+| **zlib** | 90+ (compress, deflate, inflate, gzip file I/O) | Complete |
 
-There are four major toolchain components, that may be incrementally built:
+## Architecture
 
-***I just want to run WALI Wasm executables!***:
-1. [WALI Engine](#1-wali-engine)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    WASM Application                              │
+│                                                                  │
+│  #include <zlib.h>     // Uses wali_shims/zlib.h                │
+│  compress(dst, &len, src, srclen);                              │
+│  gzFile f = gzopen("data.gz", "wb");                            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ WASM imports
+                            │ (import "env" "wali_compress" ...)
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    WAMR Runtime (iwasm)                         │
+│                                                                  │
+│  lib-zlib/lib_zlib.c:                                           │
+│    - Handle tables for z_stream, gzFile, gz_header              │
+│    - Wrapper functions that translate WASM↔Native               │
+│    - Links against host libz.so                                 │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ native calls
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Host System                                   │
+│                    libz.so (native zlib)                        │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-***I want to compile/build WALI executables!***:
+## Quick Start
 
-2. [WALI LLVM Toolchain](#2-wali-llvm-toolchain)
-3. [WALI Sysroot](#3-wali-sysroot)
+### 1. Build the Runtime
 
-***I want to AoT compile the Wasm executables to go fast!***
+```bash
+# Install dependencies
+sudo ./apt-install-deps.sh
 
-4. [AoT Compiler](#4-aot-compiler)
+# Initialize submodules
+git submodule update --init wasm-micro-runtime wali-musl
 
-
-### 1. WALI Engine
-
-We include a baseline implementation in WAMR. 
-See [examples/precompiled](examples/precompiled) after building for runnable WALI binaries.
-
-#### Native Linux Host
-
-Install dependencies with `sudo ./apt-install-deps.sh` or equivalent packages. Then build with:
-```shell
-git submodule update --init wasm-micro-runtime
-# Generates `iwasm` symlink in root directory
+# Build iwasm with zlib support
 make iwasm
 ```
 
-##### WASM as a Miscellaneous Binary Format (Optional but Recommended)
+### 2. Build the Toolchain (to compile WASM apps)
 
-WALI Wasm/AoT binaries can be executed like ELF files with `iwasm` (e.g. `./bash.wasm --norc`).
-This is recommended since it simplifies execution and is **necessary** to build some [applications](applications) out-of-the-box.
-To do this, run:
-
-```shell
-cd misc
-source gen_iwasm_wrapper.sh
-# Specify '-p' option to register with systemd-binfmt for reboot survival. Default binfmt_register does not survive system reboots
-sudo ./binfmt_register.sh -p
-```
-
-For more info about miscellaneous binary formats and troubleshooting, see [here](https://docs.kernel.org/admin-guide/binfmt-misc.html)
-
-
-#### Non-Linux Host (Docker Environment)
-
-To build the image:
-```shell
-docker build -t wali -f runtime.Dockerfile .
-```
-
-You can then run WALI binaries with the image:
-```shell
-docker run --rm -it -w /dir -v (pwd):/dir wali <prog.wasm> <args..>
-```
-
-
-### 2. WALI LLVM Toolchain
-
-```shell
+```bash
 git submodule update --init --depth=1 llvm-project
 make wali-compiler
-```
-
-**NOTE**: Building the LLVM suite takes a long time and can consume up to 150GB of disk. The compiler is essential if you want to rebuild libc or build applications.
-
-
-### 3. WALI Sysroot
-
-```shell
-git submodule update --init wali-musl
 make libc
 ```
 
-**NOTE**: Only the following 64-bit architectures are supported: `x86-64`, `aarch64`, `riscv64`. Future iterations will include a larger set of ISAs.
+### 3. Compile a zlib Application
 
+```c
+// myapp.c
+#include <stdio.h>
+#include <string.h>
+#include <zlib.h>
 
-### 4. AoT Compiler
-
-Generates faster ahead-of time compiled executables. For the WAMR implementation, build with:
+int main() {
+    const char *data = "Hello, wali-lib!";
+    uLong src_len = strlen(data);
+    uLong dst_len = compressBound(src_len);
+    
+    Bytef compressed[256];
+    int ret = compress(compressed, &dst_len, (const Bytef *)data, src_len);
+    
+    if (ret == Z_OK) {
+        printf("Compressed %lu bytes to %lu bytes\n", src_len, dst_len);
+    }
+    
+    // Gzip file I/O
+    gzFile f = gzopen("output.gz", "wb");
+    gzwrite(f, data, src_len);
+    gzclose(f);
+    
+    return 0;
+}
 ```
-make wamrc
-```
 
-The `wamrc` symlink can be used as follows:
-
-```shell
-# --enable-multi-thread flag is needed for thread support
-wamrc --enable-multi-thread -o <destination-aot-file> <source-wasm-file>
-```
-
-Refer to [WAMR compiler docs](https://github.com/SilverLineFramework/wasm-micro-runtime/tree/wali/wamr-compiler) for more info.
-
-
-## Building WALI Applications
-
-Ensure [initial setup](#initial-setup) is completed. 
-
-> For additional information on using/customizing toolchains, see [toolchains](toolchains/README.md) 
-
-### Hello World
-
-You can use the convenience bash script in the [examples](examples) directory. For instance:
-```shell
+Compile:
+```bash
 cd examples
-./compile-wali-standalone.sh -o printf.wasm printf.c
-# Run the binary. Can just run `printf.wasm` if miscellaneous binary format is setup
-../iwasm printf.wasm
+./compile-wali-standalone.sh -I../wali_shims -o myapp.wasm myapp.c
+../iwasm myapp.wasm
 ```
 
-### Building C Tests
-```shell
-# WALI executables are located in `./tests/wasm`
-make tests
+## Project Structure
+
+```
+wali-lib/
+├── wali_shims/
+│   └── zlib.h                 # WASM shim header (declares imports)
+├── wasm-micro-runtime/
+│   └── core/iwasm/libraries/
+│       └── lib-zlib/
+│           ├── lib_zlib.c     # Native wrappers (~1700 lines)
+│           ├── lib_zlib.h     # API header
+│           ├── lib_zlib.cmake # Build integration
+│           └── README.md      # Detailed documentation
+├── wali-musl/                 # Modified musl libc for WASM
+├── tests/
+│   └── zlib_test/
+│       ├── test_zlib.c        # Core API tests
+│       ├── test_gzip.c        # Gzip file I/O tests
+│       └── compile.sh         # Build script
+└── examples/
+    └── compile-wali-standalone.sh
 ```
 
-## Compiler Ports
+## zlib API Coverage
 
-### Rust
+### Basic Compression
+- `compress`, `compress2`, `compressBound`
+- `uncompress`, `uncompress2`
 
-> **Note**: Preliminary support for a [`wasm32-wali-linux-musl`](https://doc.rust-lang.org/nightly/rustc/platform-support/wasm32-wali-linux.html) target has been upstreamed to rustc! 
-> Support for this target requires several ecosystem components to ratchet up to something usable for long-term stability, and may currently be broken. 
-> Use the below out-of-tree build process for rustc if you need a stable target as a proof-of-concept.
+### Deflate Stream
+- `deflateInit`, `deflateInit2`, `deflate`, `deflateEnd`
+- `deflateSetDictionary`, `deflateGetDictionary`
+- `deflateParams`, `deflateTune`, `deflateBound`
+- `deflatePending`, `deflatePrime`, `deflateSetHeader`
+- `deflateCopy`, `deflateReset`, `deflateResetKeep`
 
-We support a custom Rust compiler with a `wasm32-wali-linux-musl` target. 
-Existing `cargo` and  `rustup` are required for a successful build.
-To build `rustc`, run:
+### Inflate Stream
+- `inflateInit`, `inflateInit2`, `inflate`, `inflateEnd`
+- `inflateSetDictionary`, `inflateGetDictionary`
+- `inflateSync`, `inflateMark`, `inflateGetHeader`
+- `inflateCopy`, `inflateReset`, `inflateReset2`, `inflateResetKeep`
+- `inflatePrime`, `inflateSyncPoint`, `inflateValidate`
 
-```shell
-make rustc
+### Gzip File I/O (27 functions)
+- `gzopen`, `gzdopen`, `gzclose`, `gzclose_r`, `gzclose_w`
+- `gzread`, `gzwrite`, `gzfread`, `gzfwrite`
+- `gzgetc`, `gzputc`, `gzungetc`, `gzgets`, `gzputs`
+- `gzseek`, `gztell`, `gzoffset`, `gzrewind`, `gzeof`
+- `gzflush`, `gzbuffer`, `gzsetparams`, `gzdirect`
+- `gzerror`, `gzclearerr`
+
+### Utilities
+- `adler32`, `adler32_z`, `adler32_combine`
+- `crc32`, `crc32_z`, `crc32_combine`, `crc32_combine_gen`, `crc32_combine_op`
+- `zlibVersion`, `zlibCompileFlags`, `zError`
+
+## How It Works
+
+### 1. Shim Header (`wali_shims/zlib.h`)
+
+Replaces the system zlib.h during compilation:
+
+```c
+// Declares function as WASM import
+__attribute__((import_module("env"), import_name("wali_compress")))
+int compress(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);
 ```
 
-This adds a new toolchain to `rustup` named `wali` with the new target.
-To compile applications:
-```shell
-cargo +wali build --target=wasm32-wali-linux-musl
+When compiled, this creates a WASM import:
+```wat
+(import "env" "wali_compress" (func $compress ...))
 ```
 
-> **Note**: Many applications will currently require a custom [libc](https://github.com/arjunr2/rust-libc.git) to
-be patched into `Cargo.toml` for the out-of-tree build.
+### 2. Native Wrapper (`lib_zlib.c`)
 
+Registered with WAMR to handle imports:
 
+```c
+static int zlib_compress_wrapper(wasm_exec_env_t exec_env,
+                                  uint32_t dest_wasm, uint32_t destLen_wasm,
+                                  uint32_t source_wasm, uint32_t sourceLen) {
+    // Translate WASM pointers to native
+    Bytef *dest = WASM_PTR(exec_env, dest_wasm);
+    uLongf *destLen = WASM_PTR(exec_env, destLen_wasm);
+    const Bytef *source = WASM_PTR(exec_env, source_wasm);
+    
+    // Call real zlib
+    return compress(dest, destLen, source, sourceLen);
+}
 
-## Project Motivation
-The WALI for WebAssembly aims to push lightweight virtualization
-down to prevalent, low-level Linux applications. 
-WALI adopts a layering approach to API design, allowing WASI (and other arbitrary Wasm APIs) to be virtualized over it, 
-establishing infrastructure for Wasm both in research and industry.
+// Register with WAMR
+static NativeSymbol native_symbols_zlib[] = {
+    NATIVE_FUNC(wali_compress, zlib_compress_wrapper, "(iiiI)i"),
+    // ...
+};
+```
 
-Building and running Wasm binaries is now **trivial** with WALI, while improving ecosystem security by layering Wasm APIs
+### 3. Handle Tables
 
-> Wasm possesses different runtime properties than some lower level languages like C (type-safety, sandboxing, etc.). The operation of WALI on these applications may differ as listed [here](docs/constraints.md)
+For opaque types like `z_stream` and `gzFile`:
 
-## Resources
-* [Zenodo](https://zenodo.org/records/14829424) Ubuntu 22.04 VM artifact for experimenting with WALI
-* [Syscall Information Table](https://docs.google.com/spreadsheets/d/1__2NqMqGLHdjFFYonkF49IkGgfv62TJCpZuXqhXwnlc/edit?usp=sharing)
-* Related Work: [Verifying System Interfaces Paper](https://cseweb.ucsd.edu/~dstefan/pubs/johnson:2023:wave.pdf)
+```c
+// WASM can't hold native pointers (64-bit on host)
+// So we use a handle table:
+
+static z_stream *zstream_table[256];  // Native pointers
+// WASM gets handle (index): 1, 2, 3, ...
+
+gzFile gzopen(path, mode) {
+    gzFile native = host_gzopen(path, mode);
+    uint32_t handle = alloc_handle(native);  // Store in table
+    return handle;  // Return 32-bit handle to WASM
+}
+```
+
+## Running Tests
+
+```bash
+cd tests/zlib_test
+./compile.sh
+../../iwasm test_zlib.wasm   # Core API tests
+../../iwasm test_gzip.wasm   # Gzip file I/O tests
+```
+
+## Adding New Libraries
+
+To add support for another library (e.g., libpng):
+
+1. **Create shim header**: `wali_shims/png.h`
+   - Declare all functions with `__attribute__((import_module("env"), import_name("wali_...")))`
+
+2. **Create native wrapper**: `wasm-micro-runtime/core/iwasm/libraries/lib-png/`
+   - Implement wrapper functions
+   - Create handle tables for opaque types
+   - Register native symbols
+
+3. **Update CMake**: Add to build system with `WAMR_BUILD_LIB_PNG=1`
+
+4. **Add tests**: `tests/png_test/`
+
+## Differences from WASI
+
+| Aspect | WASI | wali-lib |
+|--------|------|----------|
+| **Philosophy** | New portable API | Linux ABI + native libs |
+| **File access** | Capability-based | Direct (like native) |
+| **Libraries** | Must reimplement | Use native host libs |
+| **Sandboxing** | Built-in | Trust-based |
+
+## Credits
+
+- Based on [WALI](https://github.com/ArtlexArtem/wali) - WebAssembly Linux Interface
+- Uses [WAMR](https://github.com/bytecodealliance/wasm-micro-runtime) - WebAssembly Micro Runtime
+- Uses [musl](https://musl.libc.org/) - Lightweight libc
+
+## License
+
+See [LICENSE](LICENSE) for details.

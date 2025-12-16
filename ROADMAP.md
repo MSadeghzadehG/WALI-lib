@@ -1,209 +1,257 @@
-# wali-lib Roadmap
+# نقشه راه wali-lib
 
-## Philosophy
+> [English Version](ROADMAP.en.md)
 
-**The Problem**: WASI tries to standardize everything, but it's impossible to encode all human-generated knowledge and code into a single standard. There are millions of libraries covering every domain imaginable—compression, cryptography, databases, GUI, machine learning, networking, and more. No standards committee can keep up with this pace of evolution.
+## فلسفه
 
-**The Solution**: A pragmatic two-tier approach:
+**مشکل**: WASI تلاش می‌کند همه چیز را استاندارد کند، اما غیرممکن است که تمام دانش و کدهای تولید شده توسط انسان را در یک استاندارد واحد کدگذاری کرد. میلیون‌ها کتابخانه در هر حوزه‌ای وجود دارد—فشرده‌سازی، رمزنگاری، پایگاه داده، رابط کاربری، یادگیری ماشین، شبکه و غیره. هیچ کمیته استانداردی نمی‌تواند با این سرعت تکامل همگام شود.
 
-1. **wali-lib**: Host-side wrappers for critical infrastructure libraries that are:
-   - Performance-critical
-   - Security-sensitive  
-   - Universally needed
-   - Stable ABI
-   - Impractical to rewrite
+**راه‌حل**: یک رویکرد عملی دو سطحی:
 
-2. **Everything else**: Developers rewrite or port their specific needs in WASM-compatible ways (compile to WASM directly, use WASM-native alternatives, or rewrite in Rust/Zig targeting WASM).
+1. **wali-lib**: Wrapperهای سمت میزبان برای کتابخانه‌های زیرساختی حیاتی که:
+   - حساس به عملکرد هستند
+   - حساس به امنیت هستند
+   - به طور جهانی مورد نیاز هستند
+   - ABI پایدار دارند
+   - بازنویسی آن‌ها غیرعملی است
+
+2. **بقیه موارد**: توسعه‌دهندگان نیازهای خاص خود را به روش‌های سازگار با WASM بازنویسی یا پورت می‌کنند.
+
+<div dir="ltr">
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              All Libraries in the World                      │
+│              تمام کتابخانه‌های جهان                          │
 └─────────────────────────────────────────────────────────────┘
                             │
             ┌───────────────┴───────────────┐
             ▼                               ▼
     ┌───────────────┐               ┌───────────────────┐
-    │  Critical     │               │  Application      │
-    │  Infra (~20)  │               │  Libraries        │
-    │               │               │  (millions)       │
+    │  زیرساخت      │               │  کتابخانه‌های     │
+    │  حیاتی (~30)  │               │  اپلیکیشن         │
+    │               │               │  (میلیون‌ها)      │
     │  wali-lib     │               │                   │
-    │  host-side    │               │  Rewrite/port     │
-    │  wrappers     │               │  to pure WASM     │
+    │  wrapperهای   │               │  بازنویسی/پورت   │
+    │  سمت میزبان   │               │  به WASM خالص    │
     └───────────────┘               └───────────────────┘
 ```
 
-## Why wali-lib?
+</div>
 
-| Aspect | wali-lib (host wrappers) | Pure WASM port |
-|--------|--------------------------|----------------|
-| Performance | Native speed | WASM overhead |
-| Security | Battle-tested implementations | May introduce bugs |
-| Effort | One-time wrapper work | Full port/rewrite |
-| Portability | WAMR (+ adapters for others) | Any WASM runtime |
-| Maintenance | Host lib updates automatically | Must track upstream |
+## چرا wali-lib؟
 
-## Library Selection Criteria
+| جنبه | wali-lib (wrapperهای میزبان) | پورت WASM خالص |
+|------|------------------------------|----------------|
+| عملکرد | سرعت نیتیو | سربار WASM |
+| امنیت | پیاده‌سازی‌های آزموده شده | ممکن است باگ ایجاد شود |
+| تلاش | کار wrapper یک‌باره | پورت/بازنویسی کامل |
+| قابلیت حمل | WAMR (+ آداپتور برای دیگران) | هر runtime WASM |
+| نگهداری | به‌روزرسانی خودکار با کتابخانه میزبان | باید upstream را دنبال کرد |
 
-A library should be in wali-lib if it meets **3+ of these criteria**:
+## معیارهای انتخاب کتابخانه
 
-- [ ] **Performance-critical**: Heavy computation (compression, crypto, image processing)
-- [ ] **Security-sensitive**: Cryptography, TLS—don't want WASM reimplementations
-- [ ] **Universally needed**: Used by >50% of real-world applications
-- [ ] **Stable ABI**: Mature, rarely changes struct layouts
-- [ ] **Hard to port**: Uses SIMD, assembly, OS-specific optimizations
-- [ ] **Large codebase**: Impractical to rewrite (>50k LOC)
+یک کتابخانه باید در wali-lib باشد اگر **۳+ از این معیارها** را داشته باشد:
 
----
-
-## Library Tiers
-
-### Tier 1: Critical Infrastructure (Must Have)
-
-These libraries are foundational—almost every non-trivial application needs them.
-
-| Library | Category | Status | Priority | Notes |
-|---------|----------|--------|----------|-------|
-| **zlib** | Compression | ✅ Done | - | 73 functions implemented |
-| **OpenSSL** / **libcrypto** | Cryptography | ❌ Not started | P0 | Security-critical, don't reimplement |
-| **SQLite** | Database | ❌ Not started | P0 | Single-file DB, universally used |
-| **libpng** | Image | ❌ Not started | P1 | Depends on zlib |
-| **libjpeg-turbo** | Image | ❌ Not started | P1 | SIMD-optimized |
-| **libcurl** | Networking | ❌ Not started | P1 | HTTP client, depends on OpenSSL |
-| **zstd** | Compression | ❌ Not started | P1 | Modern compression, Facebook |
-| **bzip2** | Compression | ❌ Not started | P2 | Older but still used |
-| **lzma/xz** | Compression | ❌ Not started | P2 | High compression ratio |
-
-### Tier 2: Important Infrastructure (Should Have)
-
-These are commonly needed but more domain-specific.
-
-| Library | Category | Status | Priority | Notes |
-|---------|----------|--------|----------|-------|
-| **libwebp** | Image | ❌ Not started | P2 | Modern image format |
-| **freetype** | Font | ❌ Not started | P2 | Font rendering |
-| **libxml2** | Data | ❌ Not started | P2 | XML parsing |
-| **expat** | Data | ❌ Not started | P3 | Lightweight XML |
-| **libyaml** | Data | ❌ Not started | P3 | YAML parsing |
-| **pcre2** | Text | ❌ Not started | P2 | Regex engine |
-| **libffi** | FFI | ❌ Not started | P2 | Foreign function interface |
-| **libuv** | Async I/O | ❌ Not started | P2 | Event loop (Node.js style) |
-| **mbedtls** | Crypto | ❌ Not started | P2 | Lightweight TLS alternative |
-
-### Tier 3: Nice to Have
-
-| Library | Category | Status | Priority | Notes |
-|---------|----------|--------|----------|-------|
-| **libsodium** | Crypto | ❌ Not started | P3 | Modern crypto API |
-| **libevent** | Async I/O | ❌ Not started | P3 | Event notification |
-| **gmp** | Math | ❌ Not started | P3 | Arbitrary precision |
-| **libarchive** | Archive | ❌ Not started | P3 | tar, zip, etc. |
-| **libgit2** | VCS | ❌ Not started | P3 | Git operations |
-| **leveldb** | Database | ❌ Not started | P3 | Key-value store |
+- [ ] **حساس به عملکرد**: محاسبات سنگین (فشرده‌سازی، رمزنگاری، پردازش تصویر)
+- [ ] **حساس به امنیت**: رمزنگاری، TLS—نمی‌خواهیم پیاده‌سازی مجدد WASM
+- [ ] **نیاز جهانی**: استفاده توسط بیش از ۵۰٪ برنامه‌های واقعی
+- [ ] **ABI پایدار**: بالغ، به ندرت طرح struct تغییر می‌کند
+- [ ] **سخت برای پورت**: استفاده از SIMD، اسمبلی، بهینه‌سازی‌های خاص سیستم عامل
+- [ ] **کدبیس بزرگ**: بازنویسی غیرعملی (بیش از ۵۰ هزار خط کد)
 
 ---
 
-## Implementation Roadmap
+## سطوح کتابخانه
 
-### Phase 1: Foundation (Current)
-- [x] zlib - Complete compression support
-- [ ] OpenSSL/libcrypto - Core cryptography
-- [ ] SQLite - Embedded database
+### سطح ۱: زیرساخت حیاتی (ضروری) - FaaS Core
 
-### Phase 2: Media & Network
-- [ ] libpng - PNG images
-- [ ] libjpeg-turbo - JPEG images  
-- [ ] libcurl - HTTP client
-- [ ] zstd - Modern compression
+این کتابخانه‌ها پایه‌ای هستند—تقریباً هر برنامه غیرساده به آن‌ها نیاز دارد.
 
-### Phase 3: Extended Support
-- [ ] libwebp, freetype - Additional media
-- [ ] libxml2, pcre2 - Text processing
-- [ ] bzip2, lzma - Legacy compression
+| کتابخانه | دسته | وضعیت | اولویت | یادداشت |
+|----------|------|--------|--------|---------|
+| **zlib** | فشرده‌سازی | ✅ انجام شده | - | ۷۳+ تابع پیاده‌سازی شده |
+| **cJSON** | داده/JSON | ❌ شروع نشده | P0 | JSON در همه توابع FaaS استفاده می‌شود |
+| **jansson** | داده/JSON | ❌ شروع نشده | P0 | جایگزین cJSON با API تمیزتر |
+| **OpenSSL** / **libcrypto** | رمزنگاری | ❌ شروع نشده | P0 | حساس به امنیت، بازپیاده‌سازی نکنید |
+| **hiredis** | پایگاه داده/کش | ❌ شروع نشده | P0 | Redis برای caching و session ضروری است |
+| **SQLite** | پایگاه داده | ❌ شروع نشده | P0 | پایگاه داده تک‌فایلی، استفاده جهانی |
+| **libcurl** | شبکه | ❌ شروع نشده | P1 | کلاینت HTTP، وابسته به OpenSSL |
+| **zstd** | فشرده‌سازی | ❌ شروع نشده | P1 | فشرده‌سازی مدرن، Facebook |
+| **brotli** | فشرده‌سازی | ❌ شروع نشده | P1 | استاندارد فشرده‌سازی HTTP |
+| **libpq** | پایگاه داده | ❌ شروع نشده | P1 | کلاینت PostgreSQL - محبوب‌ترین DB ابری |
+| **lz4** | فشرده‌سازی | ❌ شروع نشده | P2 | فشرده‌سازی بسیار سریع |
+| **bzip2** | فشرده‌سازی | ❌ شروع نشده | P2 | قدیمی‌تر اما هنوز استفاده می‌شود |
+| **lzma/xz** | فشرده‌سازی | ❌ شروع نشده | P2 | نسبت فشرده‌سازی بالا |
 
-### Phase 4: Ecosystem
-- [ ] libuv - Async I/O
-- [ ] libffi - FFI support
-- [ ] Community-requested libraries
+### سطح ۲: زیرساخت مهم (باید داشته باشیم)
 
----
+این‌ها معمولاً مورد نیاز هستند اما بیشتر مختص دامنه خاص.
 
-## Implementation Guide
+| کتابخانه | دسته | وضعیت | اولویت | یادداشت |
+|----------|------|--------|--------|---------|
+| **libjwt** | احراز هویت | ❌ شروع نشده | P1 | احراز هویت API با JWT |
+| **libpng** | تصویر | ❌ شروع نشده | P1 | وابسته به zlib |
+| **libjpeg-turbo** | تصویر | ❌ شروع نشده | P1 | بهینه‌سازی شده با SIMD |
+| **libwebp** | تصویر | ❌ شروع نشده | P2 | فرمت تصویر مدرن |
+| **freetype** | فونت | ❌ شروع نشده | P2 | رندر فونت |
+| **libxml2** | داده | ❌ شروع نشده | P2 | تجزیه XML |
+| **expat** | داده | ❌ شروع نشده | P3 | XML سبک |
+| **libyaml** | داده | ❌ شروع نشده | P3 | تجزیه YAML |
+| **pcre2** | متن | ❌ شروع نشده | P2 | موتور Regex |
+| **libffi** | FFI | ❌ شروع نشده | P2 | رابط تابع خارجی |
+| **libuv** | I/O غیرهمزمان | ❌ شروع نشده | P2 | حلقه رویداد (سبک Node.js) |
+| **mbedtls** | رمزنگاری | ❌ شروع نشده | P2 | جایگزین TLS سبک |
 
-### Adding a New Library to wali-lib
+### سطح ۳: خوب است داشته باشیم
 
-1. **Analyze the library**
-   - Identify all public API functions
-   - Categorize: simple (pass-through) vs complex (needs handle tables)
-   - Check for callbacks, complex structs, thread usage
-
-2. **Create shim header** (`wali_shims/<lib>.h`)
-   - Declare all functions with `__attribute__((import_module("env"), import_name("wali_...")))`
-   - Match original header signatures exactly
-
-3. **Implement wrappers** (`wasm-micro-runtime/core/iwasm/libraries/lib-<name>/`)
-   - Create `lib_<name>.c` with native wrapper functions
-   - Add handle tables for opaque types (streams, handles, contexts)
-   - Implement struct sync for complex structures
-   - Register native symbols (both original and `wali_` prefixed)
-
-4. **Update build system**
-   - Create `lib_<name>.cmake` with `find_package()` for the library
-   - Add to WAMR build configuration
-
-5. **Write tests** (`tests/<lib>_test/`)
-   - Cover all major API functions
-   - Test edge cases and error handling
-
-6. **Document** 
-   - Add README in the library directory
-   - Update this roadmap
-
-### Complexity Guide
-
-| Pattern | Complexity | Example |
-|---------|------------|---------|
-| Pure functions | Easy | `crc32()`, `compress()` |
-| Handle-based API | Medium | `gzopen()`, `deflateInit()` |
-| Struct with pointers | Medium-Hard | `z_stream` |
-| Callbacks | Hard | `inflateBack()` (skipped) |
-| Thread-spawning | Very Hard | Avoid if possible |
+| کتابخانه | دسته | وضعیت | اولویت | یادداشت |
+|----------|------|--------|--------|---------|
+| **libsodium** | رمزنگاری | ❌ شروع نشده | P2 | API رمزنگاری مدرن و ساده |
+| **mongo-c-driver** | پایگاه داده | ❌ شروع نشده | P2 | کلاینت MongoDB |
+| **librdkafka** | صف پیام | ❌ شروع نشده | P3 | کلاینت Kafka (پیچیده - threadها) |
+| **rabbitmq-c** | صف پیام | ❌ شروع نشده | P3 | کلاینت RabbitMQ/AMQP |
+| **libevent** | I/O غیرهمزمان | ❌ شروع نشده | P3 | اعلان رویداد |
+| **gmp** | ریاضیات | ❌ شروع نشده | P3 | دقت دلخواه |
+| **libarchive** | آرشیو | ❌ شروع نشده | P3 | tar، zip و غیره |
+| **libgit2** | VCS | ❌ شروع نشده | P3 | عملیات Git |
+| **leveldb** | پایگاه داده | ❌ شروع نشده | P3 | ذخیره‌سازی کلید-مقدار |
 
 ---
 
-## Non-Goals
+## تحلیل کاربرد FaaS
 
-Libraries that should **NOT** be in wali-lib:
+بر اساس تحقیقات روی الگوهای رایج در بارهای کاری FaaS/Serverless:
 
-- **GUI toolkits** (Qt, GTK) - Too complex, callback-heavy
-- **Game engines** - Domain-specific, better as native
-- **ML frameworks** (TensorFlow, PyTorch) - Massive, GPU-dependent
-- **Language runtimes** (Python, Ruby) - Should run as WASM themselves
-- **Application frameworks** - Too opinionated, rewrite instead
+### کتابخانه‌های پرکاربرد در FaaS
+
+| دسته | کتابخانه | کاربرد FaaS | پیچیدگی Wrapper |
+|------|----------|-------------|-----------------|
+| **JSON** | cJSON, jansson | بسیار بالا | **بسیار کم** |
+| **HTTP** | libcurl | بسیار بالا | بالا (callbacks) |
+| **کش** | hiredis | بسیار بالا | **کم** (حالت sync) |
+| **پایگاه داده رابطه‌ای** | libpq | بسیار بالا | متوسط |
+| **رمزنگاری** | OpenSSL, libsodium | همه‌جا | بالا / **کم** |
+| **فشرده‌سازی** | zstd, brotli, lz4 | بالا | **کم** |
+| **صف پیام** | librdkafka | متوسط | بالا (threads) |
+| **NoSQL** | mongo-c-driver | متوسط | متوسط |
+| **JWT** | libjwt | متوسط | کم |
+
+### راهنمای پیچیدگی Wrapper
+
+<div dir="ltr">
+
+| الگو | پیچیدگی | مثال |
+|------|---------|------|
+| توابع خالص | آسان | `crc32()`, `compress()` |
+| API مبتنی بر Handle | متوسط | `gzopen()`, `deflateInit()` |
+| Struct با اشاره‌گر | متوسط-سخت | `z_stream` |
+| Callbacks | سخت | `inflateBack()` (رد شده) |
+| Thread-spawning | بسیار سخت | در صورت امکان اجتناب کنید |
+
+</div>
 
 ---
 
-## Contributing
+## نقشه راه پیاده‌سازی
 
-We welcome contributions! Priority areas:
+### فاز ۱: پایه (فعلی)
+- [x] zlib - پشتیبانی کامل فشرده‌سازی
+- [ ] cJSON/jansson - تجزیه JSON (ضروری برای FaaS)
+- [ ] hiredis - کلاینت Redis (sync)
+- [ ] OpenSSL/libcrypto - رمزنگاری هسته
+- [ ] SQLite - پایگاه داده تعبیه شده
 
-1. **OpenSSL wrappers** - Most impactful next step
-2. **SQLite wrappers** - Widely requested
-3. **Tests for existing libraries** - Improve coverage
-4. **Documentation** - Usage examples, guides
+### فاز ۲: شبکه و داده
+- [ ] libcurl - کلاینت HTTP
+- [ ] libpq - کلاینت PostgreSQL
+- [ ] zstd - فشرده‌سازی مدرن
+- [ ] brotli - فشرده‌سازی HTTP
+- [ ] libjwt - احراز هویت JWT
 
-See the implementation guide above for how to add a new library.
+### فاز ۳: رسانه و پردازش
+- [ ] libpng - تصاویر PNG
+- [ ] libjpeg-turbo - تصاویر JPEG
+- [ ] libxml2, pcre2 - پردازش متن
+- [ ] lz4, bzip2, lzma - فشرده‌سازی اضافی
+
+### فاز ۴: اکوسیستم
+- [ ] libsodium - رمزنگاری ساده
+- [ ] mongo-c-driver - کلاینت MongoDB
+- [ ] libuv - I/O غیرهمزمان
+- [ ] libffi - پشتیبانی FFI
+- [ ] کتابخانه‌های درخواستی جامعه
 
 ---
 
-## Status Legend
+## راهنمای پیاده‌سازی
 
-- ✅ Done - Fully implemented and tested
-- 🚧 In Progress - Partially implemented
-- ❌ Not started - On roadmap but no work done
-- ⏸️ Blocked - Waiting on dependencies or decisions
+### افزودن یک کتابخانه جدید به wali-lib
 
-**Priority Legend**:
-- P0 = Critical, needed for basic functionality
-- P1 = High, needed for common use cases
-- P2 = Medium, useful but not urgent
-- P3 = Low, nice to have
+1. **تحلیل کتابخانه**
+   - شناسایی تمام توابع API عمومی
+   - دسته‌بندی: ساده (pass-through) در مقابل پیچیده (نیاز به جداول handle)
+   - بررسی callbacks، structهای پیچیده، استفاده از thread
+
+2. **ایجاد هدر shim** (`wali_shims/<lib>.h`)
+   - تعریف تمام توابع با `__attribute__((import_module("env"), import_name("wali_...")))`
+   - تطبیق دقیق امضای هدر اصلی
+
+3. **پیاده‌سازی wrapperها** (`wasm-micro-runtime/core/iwasm/libraries/lib-<name>/`)
+   - ایجاد `lib_<name>.c` با توابع wrapper نیتیو
+   - افزودن جداول handle برای انواع opaque (streams، handles، contexts)
+   - پیاده‌سازی همگام‌سازی struct برای ساختارهای پیچیده
+   - ثبت symbolهای نیتیو (هم اصلی و هم با پیشوند `wali_`)
+
+4. **به‌روزرسانی سیستم ساخت**
+   - ایجاد `lib_<name>.cmake` با `find_package()` برای کتابخانه
+   - افزودن به پیکربندی ساخت WAMR
+
+5. **نوشتن تست‌ها** (`tests/<lib>_test/`)
+   - پوشش تمام توابع اصلی API
+   - تست موارد لبه و مدیریت خطا
+
+6. **مستندسازی**
+   - افزودن README در دایرکتوری کتابخانه
+   - به‌روزرسانی این نقشه راه
+
+---
+
+## غیر-اهداف
+
+کتابخانه‌هایی که **نباید** در wali-lib باشند:
+
+- **جعبه‌ابزارهای GUI** (Qt، GTK) - بسیار پیچیده، سنگین از نظر callback
+- **موتورهای بازی** - مختص دامنه، بهتر است نیتیو باشند
+- **فریم‌ورک‌های ML** (TensorFlow، PyTorch) - عظیم، وابسته به GPU
+- **runtimeهای زبان** (Python، Ruby) - باید خودشان به عنوان WASM اجرا شوند
+- **فریم‌ورک‌های اپلیکیشن** - بیش از حد نظردار، به جای آن بازنویسی کنید
+
+---
+
+## مشارکت
+
+از مشارکت‌ها استقبال می‌کنیم! حوزه‌های اولویت‌دار:
+
+1. **wrapperهای cJSON/jansson** - تأثیرگذارترین قدم بعدی برای FaaS
+2. **wrapperهای hiredis** - پشتیبانی از کش Redis
+3. **wrapperهای OpenSSL** - رمزنگاری هسته
+4. **wrapperهای SQLite** - پرتقاضا
+5. **تست برای کتابخانه‌های موجود** - بهبود پوشش
+6. **مستندات** - مثال‌های استفاده، راهنماها
+
+برای نحوه افزودن کتابخانه جدید، راهنمای پیاده‌سازی بالا را ببینید.
+
+---
+
+## راهنمای وضعیت
+
+- ✅ انجام شده - کاملاً پیاده‌سازی و تست شده
+- 🚧 در حال انجام - تا حدی پیاده‌سازی شده
+- ❌ شروع نشده - در نقشه راه اما کاری انجام نشده
+- ⏸️ مسدود - در انتظار وابستگی‌ها یا تصمیمات
+
+**راهنمای اولویت**:
+- P0 = حیاتی، برای عملکرد پایه مورد نیاز
+- P1 = بالا، برای موارد استفاده رایج مورد نیاز
+- P2 = متوسط، مفید اما فوری نیست
+- P3 = پایین، خوب است داشته باشیم

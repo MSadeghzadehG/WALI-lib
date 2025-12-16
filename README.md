@@ -27,8 +27,8 @@ wali-lib قابلیت WALI را برای پشتیبانی از کتابخانه�
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    WASM Application                              │
-│                                                                  │
+│                    WASM Application                             │
+│                                                                 │
 │  #include <zlib.h>     // Uses wali_shims/zlib.h                │
 │  compress(dst, &len, src, srclen);                              │
 │  gzFile f = gzopen("data.gz", "wb");                            │
@@ -38,7 +38,7 @@ wali-lib قابلیت WALI را برای پشتیبانی از کتابخانه�
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    WAMR Runtime (iwasm)                         │
-│                                                                  │
+│                                                                 │
 │  lib-zlib/lib_zlib.c:                                           │
 │    - Handle tables for z_stream, gzFile, gz_header              │
 │    - Wrapper functions that translate WASM↔Native               │
@@ -47,7 +47,7 @@ wali-lib قابلیت WALI را برای پشتیبانی از کتابخانه�
                             │ native calls
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Host System                                   │
+│                    Host System                                  │
 │                    libz.so (native zlib)                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -294,6 +294,36 @@ cd tests/zlib_test
 3. **به‌روزرسانی CMake**: اضافه کردن به سیستم ساخت با `WAMR_BUILD_LIB_PNG=1`
 
 4. **افزودن تست‌ها**: `tests/png_test/`
+
+## نقشه راه
+
+برای جزئیات کامل به [ROADMAP.md](ROADMAP.md) مراجعه کنید. | [English](ROADMAP.en.md)
+
+### کتابخانه‌های برنامه‌ریزی شده
+
+<div dir="ltr">
+
+| اولویت | کتابخانه | دسته | وضعیت |
+|--------|----------|------|--------|
+| ✅ | zlib | فشرده‌سازی | انجام شده |
+| P0 | cJSON/jansson | JSON | برنامه‌ریزی شده |
+| P0 | hiredis | Redis/کش | برنامه‌ریزی شده |
+| P0 | OpenSSL | رمزنگاری | برنامه‌ریزی شده |
+| P0 | SQLite | پایگاه داده | برنامه‌ریزی شده |
+| P1 | libcurl | HTTP | برنامه‌ریزی شده |
+| P1 | libpq | PostgreSQL | برنامه‌ریزی شده |
+| P1 | zstd/brotli | فشرده‌سازی | برنامه‌ریزی شده |
+| P1 | libjwt | احراز هویت | برنامه‌ریزی شده |
+| P2 | libpng/libjpeg | تصویر | برنامه‌ریزی شده |
+
+</div>
+
+### فازهای پیاده‌سازی
+
+1. **فاز ۱ (فعلی)**: zlib ✅، cJSON، hiredis، OpenSSL، SQLite
+2. **فاز ۲**: libcurl، libpq، zstd، brotli، libjwt
+3. **فاز ۳**: libpng، libjpeg، libxml2، pcre2
+4. **فاز ۴**: libsodium، mongo-c-driver، libuv، کتابخانه‌های جامعه
 
 ## تفاوت با WASI
 

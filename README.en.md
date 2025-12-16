@@ -22,8 +22,8 @@ wali-lib extends WALI to support native libraries (starting with zlib) in WebAss
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    WASM Application                              │
-│                                                                  │
+│                    WASM Application                             │
+│                                                                 │
 │  #include <zlib.h>     // Uses wali_shims/zlib.h                │
 │  compress(dst, &len, src, srclen);                              │
 │  gzFile f = gzopen("data.gz", "wb");                            │
@@ -33,7 +33,7 @@ wali-lib extends WALI to support native libraries (starting with zlib) in WebAss
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    WAMR Runtime (iwasm)                         │
-│                                                                  │
+│                                                                 │
 │  lib-zlib/lib_zlib.c:                                           │
 │    - Handle tables for z_stream, gzFile, gz_header              │
 │    - Wrapper functions that translate WASM↔Native               │
@@ -42,7 +42,7 @@ wali-lib extends WALI to support native libraries (starting with zlib) in WebAss
                             │ native calls
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Host System                                   │
+│                    Host System                                  │
 │                    libz.so (native zlib)                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -245,6 +245,32 @@ To add support for another library (e.g., libpng):
 3. **Update CMake**: Add to build system with `WAMR_BUILD_LIB_PNG=1`
 
 4. **Add tests**: `tests/png_test/`
+
+## Roadmap
+
+See [ROADMAP.en.md](ROADMAP.en.md) for full details. | [Persian](ROADMAP.md)
+
+### Planned Libraries
+
+| Priority | Library | Category | Status |
+|----------|---------|----------|--------|
+| ✅ | zlib | Compression | Done |
+| P0 | cJSON/jansson | JSON | Planned |
+| P0 | hiredis | Redis/Cache | Planned |
+| P0 | OpenSSL | Cryptography | Planned |
+| P0 | SQLite | Database | Planned |
+| P1 | libcurl | HTTP | Planned |
+| P1 | libpq | PostgreSQL | Planned |
+| P1 | zstd/brotli | Compression | Planned |
+| P1 | libjwt | Authentication | Planned |
+| P2 | libpng/libjpeg | Image | Planned |
+
+### Implementation Phases
+
+1. **Phase 1 (Current)**: zlib ✅, cJSON, hiredis, OpenSSL, SQLite
+2. **Phase 2**: libcurl, libpq, zstd, brotli, libjwt
+3. **Phase 3**: libpng, libjpeg, libxml2, pcre2
+4. **Phase 4**: libsodium, mongo-c-driver, libuv, community libraries
 
 ## Differences from WASI
 

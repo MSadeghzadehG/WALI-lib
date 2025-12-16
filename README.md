@@ -1,24 +1,29 @@
 # wali-lib
 
-**Native Library Support for WebAssembly via WALI**
+**پشتیبانی از کتابخانه‌های نیتیو برای WebAssembly از طریق WALI**
 
-A fork of [WALI (WebAssembly Linux Interface)](https://github.com/ArtlexArtem/wali) focused on providing native library bindings for WebAssembly applications.
+یک فورک از [WALI (رابط لینوکس وب‌اسمبلی)](https://github.com/ArtlexArtem/wali) با تمرکز بر ارائه اتصالات کتابخانه‌های نیتیو برای برنامه‌های WebAssembly.
 
-## What is wali-lib?
+> [English Version](README.en.md)
 
-wali-lib extends WALI to support native libraries (starting with zlib) in WebAssembly applications. It provides:
+## wali-lib چیست؟
 
-1. **Shim Headers** - Drop-in replacement headers that declare functions as WASM imports
-2. **Native Wrappers** - WAMR host functions that call the actual native libraries
-3. **Handle Tables** - Bridge between WASM's 32-bit pointers and native 64-bit pointers
+wali-lib قابلیت WALI را برای پشتیبانی از کتابخانه‌های نیتیو (با شروع از zlib) در برنامه‌های WebAssembly گسترش می‌دهد. این پروژه شامل موارد زیر است:
 
-## Currently Supported Libraries
+1. **هدرهای Shim** - هدرهای جایگزین که توابع را به عنوان importهای WASM تعریف می‌کنند
+2. **Wrapperهای نیتیو** - توابع میزبان WAMR که کتابخانه‌های نیتیو واقعی را فراخوانی می‌کنند
+3. **جداول Handle** - پل ارتباطی بین اشاره‌گرهای ۳۲ بیتی WASM و اشاره‌گرهای ۶۴ بیتی نیتیو
 
-| Library | Functions | Status |
-|---------|-----------|--------|
-| **zlib** | 90+ (compress, deflate, inflate, gzip file I/O) | Complete |
+## کتابخانه‌های پشتیبانی‌شده
 
-## Architecture
+| کتابخانه | توابع | وضعیت |
+|----------|-------|--------|
+| **zlib** | بیش از ۹۰ تابع (compress، deflate، inflate، gzip file I/O) | کامل |
+
+## معماری
+
+</p>
+<div dir="ltr">
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -47,22 +52,30 @@ wali-lib extends WALI to support native libraries (starting with zlib) in WebAss
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+</div>
 
-### 1. Build the Runtime
+## شروع سریع
+
+### ۱. ساخت Runtime
+
+<div dir="ltr">
 
 ```bash
-# Install dependencies
+# نصب وابستگی‌ها
 sudo ./apt-install-deps.sh
 
-# Initialize submodules
+# مقداردهی اولیه submoduleها
 git submodule update --init wasm-micro-runtime wali-musl
 
-# Build iwasm with zlib support
+# ساخت iwasm با پشتیبانی zlib
 make iwasm
 ```
 
-### 2. Build the Toolchain (to compile WASM apps)
+</div>
+
+### ۲. ساخت Toolchain (برای کامپایل برنامه‌های WASM)
+
+<div dir="ltr">
 
 ```bash
 git submodule update --init --depth=1 llvm-project
@@ -70,7 +83,11 @@ make wali-compiler
 make libc
 ```
 
-### 3. Compile a zlib Application
+</div>
+
+### ۳. کامپایل یک برنامه zlib
+
+<div dir="ltr">
 
 ```c
 // myapp.c
@@ -99,168 +116,200 @@ int main() {
 }
 ```
 
-Compile:
+</div>
+
+کامپایل:
+
+<div dir="ltr">
+
 ```bash
 cd examples
 ./compile-wali-standalone.sh -I../wali_shims -o myapp.wasm myapp.c
 ../iwasm myapp.wasm
 ```
 
-## Project Structure
+</div>
+
+## ساختار پروژه
+
+<div dir="ltr">
 
 ```
 wali-lib/
 ├── wali_shims/
-│   └── zlib.h                 # WASM shim header (declares imports)
+│   └── zlib.h                 # هدر shim برای WASM (تعریف importها)
 ├── wasm-micro-runtime/
 │   └── core/iwasm/libraries/
 │       └── lib-zlib/
-│           ├── lib_zlib.c     # Native wrappers (~1700 lines)
-│           ├── lib_zlib.h     # API header
-│           ├── lib_zlib.cmake # Build integration
-│           └── README.md      # Detailed documentation
-├── wali-musl/                 # Modified musl libc for WASM
+│           ├── lib_zlib.c     # Wrapperهای نیتیو (~۱۷۰۰ خط)
+│           ├── lib_zlib.h     # هدر API
+│           ├── lib_zlib.cmake # یکپارچه‌سازی با سیستم ساخت
+│           └── README.md      # مستندات جزئی
+├── wali-musl/                 # کتابخانه musl libc اصلاح‌شده برای WASM
 ├── tests/
 │   └── zlib_test/
-│       ├── test_zlib.c        # Core API tests
-│       ├── test_gzip.c        # Gzip file I/O tests
-│       └── compile.sh         # Build script
+│       ├── test_zlib.c        # تست‌های API اصلی
+│       ├── test_gzip.c        # تست‌های Gzip file I/O
+│       └── compile.sh         # اسکریپت ساخت
 └── examples/
     └── compile-wali-standalone.sh
 ```
 
-## zlib API Coverage
+</div>
 
-### Basic Compression
-- `compress`, `compress2`, `compressBound`
-- `uncompress`, `uncompress2`
+## پوشش API کتابخانه zlib
 
-### Deflate Stream
-- `deflateInit`, `deflateInit2`, `deflate`, `deflateEnd`
-- `deflateSetDictionary`, `deflateGetDictionary`
-- `deflateParams`, `deflateTune`, `deflateBound`
-- `deflatePending`, `deflatePrime`, `deflateSetHeader`
-- `deflateCopy`, `deflateReset`, `deflateResetKeep`
+### فشرده‌سازی پایه
+- `compress`، `compress2`، `compressBound`
+- `uncompress`، `uncompress2`
 
-### Inflate Stream
-- `inflateInit`, `inflateInit2`, `inflate`, `inflateEnd`
-- `inflateSetDictionary`, `inflateGetDictionary`
-- `inflateSync`, `inflateMark`, `inflateGetHeader`
-- `inflateCopy`, `inflateReset`, `inflateReset2`, `inflateResetKeep`
-- `inflatePrime`, `inflateSyncPoint`, `inflateValidate`
+### جریان Deflate
+- `deflateInit`، `deflateInit2`، `deflate`، `deflateEnd`
+- `deflateSetDictionary`، `deflateGetDictionary`
+- `deflateParams`، `deflateTune`، `deflateBound`
+- `deflatePending`، `deflatePrime`، `deflateSetHeader`
+- `deflateCopy`، `deflateReset`، `deflateResetKeep`
 
-### Gzip File I/O (27 functions)
-- `gzopen`, `gzdopen`, `gzclose`, `gzclose_r`, `gzclose_w`
-- `gzread`, `gzwrite`, `gzfread`, `gzfwrite`
-- `gzgetc`, `gzputc`, `gzungetc`, `gzgets`, `gzputs`
-- `gzseek`, `gztell`, `gzoffset`, `gzrewind`, `gzeof`
-- `gzflush`, `gzbuffer`, `gzsetparams`, `gzdirect`
-- `gzerror`, `gzclearerr`
+### جریان Inflate
+- `inflateInit`، `inflateInit2`، `inflate`، `inflateEnd`
+- `inflateSetDictionary`، `inflateGetDictionary`
+- `inflateSync`، `inflateMark`، `inflateGetHeader`
+- `inflateCopy`، `inflateReset`، `inflateReset2`، `inflateResetKeep`
+- `inflatePrime`، `inflateSyncPoint`، `inflateValidate`
 
-### Utilities
-- `adler32`, `adler32_z`, `adler32_combine`
-- `crc32`, `crc32_z`, `crc32_combine`, `crc32_combine_gen`, `crc32_combine_op`
-- `zlibVersion`, `zlibCompileFlags`, `zError`
+### عملیات فایل Gzip (۲۷ تابع)
+- `gzopen`، `gzdopen`، `gzclose`، `gzclose_r`، `gzclose_w`
+- `gzread`، `gzwrite`، `gzfread`، `gzfwrite`
+- `gzgetc`، `gzputc`، `gzungetc`، `gzgets`، `gzputs`
+- `gzseek`، `gztell`، `gzoffset`، `gzrewind`، `gzeof`
+- `gzflush`، `gzbuffer`، `gzsetparams`، `gzdirect`
+- `gzerror`، `gzclearerr`
 
-## How It Works
+### توابع کمکی
+- `adler32`، `adler32_z`، `adler32_combine`
+- `crc32`، `crc32_z`، `crc32_combine`، `crc32_combine_gen`، `crc32_combine_op`
+- `zlibVersion`، `zlibCompileFlags`، `zError`
 
-### 1. Shim Header (`wali_shims/zlib.h`)
+## نحوه کار
 
-Replaces the system zlib.h during compilation:
+### ۱. هدر Shim (`wali_shims/zlib.h`)
+
+این هدر جایگزین zlib.h سیستم در زمان کامپایل می‌شود:
+
+<div dir="ltr">
 
 ```c
-// Declares function as WASM import
+// تعریف تابع به عنوان import در WASM
 __attribute__((import_module("env"), import_name("wali_compress")))
 int compress(Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen);
 ```
 
-When compiled, this creates a WASM import:
+</div>
+
+پس از کامپایل، این کد یک import در WASM ایجاد می‌کند:
+
+<div dir="ltr">
+
 ```wat
 (import "env" "wali_compress" (func $compress ...))
 ```
 
-### 2. Native Wrapper (`lib_zlib.c`)
+</div>
 
-Registered with WAMR to handle imports:
+### ۲. Wrapper نیتیو (`lib_zlib.c`)
+
+این توابع در WAMR ثبت می‌شوند تا importها را مدیریت کنند:
+
+<div dir="ltr">
 
 ```c
 static int zlib_compress_wrapper(wasm_exec_env_t exec_env,
                                   uint32_t dest_wasm, uint32_t destLen_wasm,
                                   uint32_t source_wasm, uint32_t sourceLen) {
-    // Translate WASM pointers to native
+    // تبدیل اشاره‌گرهای WASM به نیتیو
     Bytef *dest = WASM_PTR(exec_env, dest_wasm);
     uLongf *destLen = WASM_PTR(exec_env, destLen_wasm);
     const Bytef *source = WASM_PTR(exec_env, source_wasm);
     
-    // Call real zlib
+    // فراخوانی zlib واقعی
     return compress(dest, destLen, source, sourceLen);
 }
 
-// Register with WAMR
+// ثبت در WAMR
 static NativeSymbol native_symbols_zlib[] = {
     NATIVE_FUNC(wali_compress, zlib_compress_wrapper, "(iiiI)i"),
     // ...
 };
 ```
 
-### 3. Handle Tables
+</div>
 
-For opaque types like `z_stream` and `gzFile`:
+### ۳. جداول Handle
+
+برای انواع opaque مانند `z_stream` و `gzFile`:
+
+<div dir="ltr">
 
 ```c
-// WASM can't hold native pointers (64-bit on host)
-// So we use a handle table:
+// WASM نمی‌تواند اشاره‌گرهای نیتیو (۶۴ بیتی در میزبان) را نگه دارد
+// بنابراین از جدول handle استفاده می‌کنیم:
 
-static z_stream *zstream_table[256];  // Native pointers
-// WASM gets handle (index): 1, 2, 3, ...
+static z_stream *zstream_table[256];  // اشاره‌گرهای نیتیو
+// WASM یک handle (اندیس) دریافت می‌کند: ۱، ۲، ۳، ...
 
 gzFile gzopen(path, mode) {
     gzFile native = host_gzopen(path, mode);
-    uint32_t handle = alloc_handle(native);  // Store in table
-    return handle;  // Return 32-bit handle to WASM
+    uint32_t handle = alloc_handle(native);  // ذخیره در جدول
+    return handle;  // بازگرداندن handle ۳۲ بیتی به WASM
 }
 ```
 
-## Running Tests
+</div>
+
+## اجرای تست‌ها
+
+<div dir="ltr">
 
 ```bash
 cd tests/zlib_test
 ./compile.sh
-../../iwasm test_zlib.wasm   # Core API tests
-../../iwasm test_gzip.wasm   # Gzip file I/O tests
+../../iwasm test_zlib.wasm   # تست‌های API اصلی
+../../iwasm test_gzip.wasm   # تست‌های Gzip file I/O
 ```
 
-## Adding New Libraries
+</div>
 
-To add support for another library (e.g., libpng):
+## افزودن کتابخانه‌های جدید
 
-1. **Create shim header**: `wali_shims/png.h`
-   - Declare all functions with `__attribute__((import_module("env"), import_name("wali_...")))`
+برای افزودن پشتیبانی از یک کتابخانه جدید (مثلاً libpng):
 
-2. **Create native wrapper**: `wasm-micro-runtime/core/iwasm/libraries/lib-png/`
-   - Implement wrapper functions
-   - Create handle tables for opaque types
-   - Register native symbols
+1. **ایجاد هدر shim**: `wali_shims/png.h`
+   - تمام توابع را با `__attribute__((import_module("env"), import_name("wali_...")))` تعریف کنید
 
-3. **Update CMake**: Add to build system with `WAMR_BUILD_LIB_PNG=1`
+2. **ایجاد wrapper نیتیو**: `wasm-micro-runtime/core/iwasm/libraries/lib-png/`
+   - توابع wrapper را پیاده‌سازی کنید
+   - جداول handle برای انواع opaque ایجاد کنید
+   - symbolهای نیتیو را ثبت کنید
 
-4. **Add tests**: `tests/png_test/`
+3. **به‌روزرسانی CMake**: اضافه کردن به سیستم ساخت با `WAMR_BUILD_LIB_PNG=1`
 
-## Differences from WASI
+4. **افزودن تست‌ها**: `tests/png_test/`
 
-| Aspect | WASI | wali-lib |
-|--------|------|----------|
-| **Philosophy** | New portable API | Linux ABI + native libs |
-| **File access** | Capability-based | Direct (like native) |
-| **Libraries** | Must reimplement | Use native host libs |
-| **Sandboxing** | Built-in | Trust-based |
+## تفاوت با WASI
 
-## Credits
+| جنبه | WASI | wali-lib |
+|------|------|----------|
+| **فلسفه** | API قابل حمل جدید | ABI لینوکس + کتابخانه‌های نیتیو |
+| **دسترسی به فایل** | مبتنی بر capability | مستقیم (مانند نیتیو) |
+| **کتابخانه‌ها** | باید دوباره پیاده‌سازی شوند | استفاده از کتابخانه‌های نیتیو میزبان |
+| **Sandboxing** | داخلی | مبتنی بر اعتماد |
 
-- Based on [WALI](https://github.com/ArtlexArtem/wali) - WebAssembly Linux Interface
-- Uses [WAMR](https://github.com/bytecodealliance/wasm-micro-runtime) - WebAssembly Micro Runtime
-- Uses [musl](https://musl.libc.org/) - Lightweight libc
+## اعتبارات
 
-## License
+- بر اساس [WALI](https://github.com/ArtlexArtem/wali) - رابط لینوکس WebAssembly
+- استفاده از [WAMR](https://github.com/bytecodealliance/wasm-micro-runtime) - محیط اجرای میکرو WebAssembly
+- استفاده از [musl](https://musl.libc.org/) - کتابخانه سبک libc
 
-See [LICENSE](LICENSE) for details.
+## مجوز
+
+برای جزئیات به [LICENSE](LICENSE) مراجعه کنید.

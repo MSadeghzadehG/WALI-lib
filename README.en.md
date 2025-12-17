@@ -4,6 +4,30 @@
 
 A fork of [WALI (WebAssembly Linux Interface)](https://github.com/arjunr2/WALI) focused on providing native library bindings for WebAssembly applications.
 
+## Motivation
+
+**The Problem: WASI Requires Recompiling Everything**
+
+WASI doesn't support dynamic linking, which means every library must be rewritten or recompiled to WASI-compatible WASM. To run a simple C program that uses zlib and libpq, you must recompile both libraries (and all their dependencies) to WASM — which is not practical for most real-world applications.
+
+This forces developers to recompile the entire software heritage just to run their applications in WASM.
+
+**The Solution: Reuse Linux Infrastructure**
+
+Linux has decades of battle-tested infrastructure: **syscalls** AND **libraries**. 
+
+- [WALI](https://github.com/arjunr2/WALI) already virtualizes Linux syscalls for WASM
+- **wali-lib** extends this to virtualize Linux shared libraries (.so files)
+
+**Our Goal: Natural WASM Development**
+
+With wali-lib, developers can:
+- Use native libs as-is (zlib, OpenSSL, libpq, etc.) — no recompilation needed
+- Only recompile YOUR application code to WASM
+- Third-party libs can be recompiled without changing how they use native libs (same `#include <zlib.h>`, same API)
+
+We focus on ~20-30 critical infrastructure libraries that cover 80%+ of real-world workloads — the "libc of application development": compression, crypto, databases, networking, and data parsing.
+
 ## What is wali-lib?
 
 wali-lib extends WALI to support native libraries (starting with zlib) in WebAssembly applications. It provides:

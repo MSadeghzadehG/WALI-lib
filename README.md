@@ -2,7 +2,7 @@
 
 **پشتیبانی از کتابخانه‌های نیتیو برای WebAssembly از طریق WALI**
 
-یک فورک از [WALI (رابط لینوکس وب‌اسمبلی)](https://github.com/ArtlexArtem/wali) با تمرکز بر ارائه اتصالات کتابخانه‌های نیتیو برای برنامه‌های WebAssembly.
+یک فورک از [WALI (رابط لینوکس وب‌اسمبلی)](https://github.com/arjunr2/WALI) با تمرکز بر ارائه اتصالات کتابخانه‌های نیتیو برای برنامه‌های WebAssembly.
 
 > [English Version](README.en.md)
 
@@ -336,7 +336,7 @@ cd tests/zlib_test
 
 ## اعتبارات
 
-- بر اساس [WALI](https://github.com/ArtlexArtem/wali) - رابط لینوکس WebAssembly
+- بر اساس [WALI](https://github.com/arjunr2/WALI) - رابط لینوکس WebAssembly
 - استفاده از [WAMR](https://github.com/bytecodealliance/wasm-micro-runtime) - محیط اجرای میکرو WebAssembly
 - استفاده از [musl](https://musl.libc.org/) - کتابخانه سبک libc
 

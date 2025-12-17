@@ -2,7 +2,7 @@
 
 **Native Library Support for WebAssembly via WALI**
 
-A fork of [WALI (WebAssembly Linux Interface)](https://github.com/ArtlexArtem/wali) focused on providing native library bindings for WebAssembly applications.
+A fork of [WALI (WebAssembly Linux Interface)](https://github.com/arjunr2/WALI) focused on providing native library bindings for WebAssembly applications.
 
 ## What is wali-lib?
 
@@ -283,7 +283,7 @@ See [ROADMAP.en.md](ROADMAP.en.md) for full details. | [Persian](ROADMAP.md)
 
 ## Credits
 
-- Based on [WALI](https://github.com/ArtlexArtem/wali) - WebAssembly Linux Interface
+- Based on [WALI](https://github.com/arjunr2/WALI) - WebAssembly Linux Interface
 - Uses [WAMR](https://github.com/bytecodealliance/wasm-micro-runtime) - WebAssembly Micro Runtime
 - Uses [musl](https://musl.libc.org/) - Lightweight libc
 
